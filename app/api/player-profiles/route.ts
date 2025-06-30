@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     // Validate file type (images and videos)
     const allowedTypes = [
       'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif',
-      'video/mp4', 'video/mov', 'video/avi', 'video/webm', 'video/quicktime'
+      'video/mp4', 'video/webm'
     ]
     
     if (!allowedTypes.includes(image.type)) {
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
     }
 
     // Check file size (50MB limit for better UX)
-    const maxSize = 50 * 1024 * 1024 // 50MB
+    const maxSize = 5 * 1024 * 1024 // 5MB
     if (image.size > maxSize) {
       return NextResponse.json({ 
         error: "File too large. Maximum size is 50MB." 
