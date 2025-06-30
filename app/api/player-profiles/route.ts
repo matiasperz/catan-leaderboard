@@ -54,7 +54,7 @@ export async function POST(request: Request) {
     const maxSize = 5 * 1024 * 1024 // 5MB
     if (image.size > maxSize) {
       return NextResponse.json({ 
-        error: "File too large. Maximum size is 50MB." 
+        error: "File too large. Maximum size is 5MB." 
       }, { status: 400 })
     }
 
