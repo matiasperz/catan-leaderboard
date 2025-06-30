@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Crown, Sword, Shield, Plus, Trophy, Scroll, ArrowLeft, Lock, Settings } from "lucide-react"
+import { Crown, Sword, Shield, Plus, Trophy, Scroll, ArrowLeft, Lock, Settings, Trash2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 
@@ -53,6 +53,8 @@ export default function BoardPage() {
   const [showPlayerManager, setShowPlayerManager] = useState(false)
   const [selectedPlayer, setSelectedPlayer] = useState("")
   const [playerProfiles, setPlayerProfiles] = useState<Record<string, string>>({})
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   // Helper function to determine if URL is a video
   const isVideoUrl = (url: string) => {
@@ -179,6 +181,41 @@ export default function BoardPage() {
 
   const handleAuth = async () => {
     await handleAuthWithPassword(password)
+  }
+
+  const handleDeleteBoard = async () => {
+    if (!isAuthenticated) {
+      setShowAuth(true)
+      return
+    }
+
+    setDeleting(true)
+    try {
+      const response = await fetch(`/api/boards/${slug}`, {
+        method: "DELETE",
+        headers: {
+          'Authorization': `Bearer ${password}`,
+        },
+      })
+
+      if (response.ok) {
+        alert("Board deleted successfully!")
+        router.push('/')
+      } else if (response.status === 401) {
+        alert("Authentication failed. Please re-enter your password.")
+        setIsAuthenticated(false)
+        setShowAuth(true)
+      } else {
+        const error = await response.json()
+        alert(error.error || "Failed to delete board")
+      }
+    } catch (error) {
+      console.error("Failed to delete board:", error)
+      alert("Failed to delete board")
+    } finally {
+      setDeleting(false)
+      setShowDeleteConfirm(false)
+    }
   }
 
   const handleImageUpload = async (playerName: string, file: File) => {
@@ -567,6 +604,21 @@ export default function BoardPage() {
                 Manage Player Profiles
                 {!isAuthenticated && <Lock className="w-4 h-4 ml-2" />}
               </Button>
+              
+              {/* Danger Zone - Delete Board */}
+              {isAuthenticated && (
+                <div className="mt-6 pt-4 border-t border-red-200">
+                  <p className="text-sm font-serif text-red-600 mb-2 text-center">Danger Zone</p>
+                  <Button
+                    onClick={() => setShowDeleteConfirm(true)}
+                    variant="outline"
+                    className="w-full border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400 font-serif"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete Board
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -688,6 +740,58 @@ export default function BoardPage() {
                       className="flex-1 bg-amber-700 hover:bg-amber-800 text-white font-serif"
                     >
                       Done
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <Card className="w-full max-w-md bg-gradient-to-b from-red-50 to-red-100 border-2 border-red-300">
+              <CardHeader className="bg-gradient-to-r from-red-200 to-red-300 border-b-2 border-red-400">
+                <CardTitle className="text-xl font-serif text-red-800 flex items-center gap-2">
+                  <Trash2 className="w-5 h-5" />
+                  Delete Board
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  <div className="text-center">
+                    <p className="font-serif text-red-800 mb-2">
+                      Are you sure you want to delete this board?
+                    </p>
+                    <p className="text-sm text-red-600">
+                      This will permanently delete:
+                    </p>
+                    <ul className="text-sm text-red-600 mt-2 space-y-1">
+                      <li>• All player data and statistics</li>
+                      <li>• All game records and history</li>
+                      <li>• All player profile images</li>
+                      <li>• The board "{boardInfo?.name}" itself</li>
+                    </ul>
+                    <p className="text-sm font-bold text-red-700 mt-3">
+                      This action cannot be undone!
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleDeleteBoard}
+                      disabled={deleting}
+                      className="flex-1 bg-red-700 hover:bg-red-800 text-white font-serif"
+                    >
+                      {deleting ? "Deleting..." : "Yes, Delete Board"}
+                    </Button>
+                    <Button
+                      onClick={() => setShowDeleteConfirm(false)}
+                      variant="outline"
+                      disabled={deleting}
+                      className="flex-1 border-gray-300 text-gray-800 font-serif"
+                    >
+                      Cancel
                     </Button>
                   </div>
                 </div>
